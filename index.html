@@ -1,0 +1,1132 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leitor - Manuscrito Moderno 2.0</title>
+
+<style>
+body{
+margin:0;
+font-family:Georgia,serif;
+background:#f5f1e8;
+color:#1e1e1e;
+}
+
+#toolbar{
+position:sticky;
+top:0;
+z-index:30;
+background:#fffdf8;
+border-bottom:1px solid #ddd;
+padding:12px 20px;
+display:flex;
+flex-wrap:wrap;
+align-items:center;
+gap:14px;
+box-shadow:0 2px 12px rgba(0,0,0,.06);
+font-family:system-ui,sans-serif;
+font-size:14px;
+}
+
+#toolbar label{font-weight:600;}
+#userName{
+padding:8px 12px;
+border:1px solid #ccc;
+border-radius:8px;
+min-width:180px;
+font-size:14px;
+}
+
+.palette{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.palette span{font-weight:600;margin-right:4px;}
+
+.swatch{
+width:28px;
+height:28px;
+border-radius:50%;
+border:2px solid transparent;
+cursor:pointer;
+box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);
+}
+
+.swatch.active{
+border-color:#1e1e1e;
+transform:scale(1.08);
+}
+
+.toolbar-actions{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+margin-left:auto;
+}
+
+.toolbar-actions button{
+width:auto;
+margin:0;
+padding:8px 14px;
+border:1px solid #ccc;
+border-radius:8px;
+background:#fff;
+cursor:pointer;
+font-size:13px;
+}
+
+.toolbar-actions button.primary{
+background:#1f2933;
+color:#fff;
+border-color:#1f2933;
+}
+
+.toolbar-actions button:hover{background:#f0f0f0;}
+.toolbar-actions button.primary:hover{background:#374151;}
+
+#wrap{display:flex;width:100%;}
+.side{width:260px;min-height:calc(100vh - 60px);}
+
+#center{
+flex:1;
+display:flex;
+justify-content:center;
+padding:40px;
+}
+
+#text{
+width:740px;
+max-width:100%;
+background:#fffdf8;
+padding:60px;
+line-height:1.9;
+font-size:18px;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+#text p{
+margin:0 0 1em;
+}
+
+#text p.cena{
+text-align:center;
+letter-spacing:.35em;
+color:#666;
+margin:2em 0;
+}
+
+.highlight{
+padding:2px;
+border-radius:2px;
+}
+
+.note{
+position:absolute;
+width:220px;
+background:#1f2933;
+color:white;
+padding:12px 12px 12px 12px;
+padding-top:36px;
+border-radius:10px;
+z-index:10;
+cursor:grab;
+box-shadow:0 8px 20px rgba(0,0,0,.2);
+}
+
+.note-edit{
+position:absolute;
+top:8px;
+right:8px;
+width:28px;
+height:28px;
+padding:0;
+margin:0;
+border:none;
+border-radius:6px;
+background:rgba(255,255,255,.15);
+color:#fff;
+cursor:pointer;
+font-size:14px;
+line-height:1;
+}
+
+.note-edit:hover{background:rgba(255,255,255,.3);}
+
+.note-body{white-space:pre-wrap;word-break:break-word;}
+
+#svg{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+pointer-events:none;
+z-index:5;
+}
+
+#modal{
+position:fixed;
+inset:0;
+display:none;
+justify-content:center;
+align-items:center;
+background:rgba(0,0,0,.4);
+z-index:40;
+}
+
+#box{
+width:360px;
+padding:20px;
+border-radius:12px;
+background:white;
+font-family:system-ui,sans-serif;
+}
+
+#box h3{margin-top:0;}
+
+#box textarea{
+width:100%;
+height:100px;
+box-sizing:border-box;
+padding:8px;
+border:1px solid #ccc;
+border-radius:8px;
+font-family:inherit;
+}
+
+#box .modal-actions{
+display:flex;
+flex-direction:column;
+gap:8px;
+margin-top:12px;
+}
+
+#box button{
+padding:10px;
+width:100%;
+border-radius:8px;
+border:1px solid #ccc;
+background:#fff;
+cursor:pointer;
+}
+
+#box button.primary{background:#1f2933;color:#fff;border-color:#1f2933;}
+#box button.danger{background:#b91c1c;color:#fff;border-color:#b91c1c;}
+
+#edit-choices{display:none;flex-direction:column;gap:8px;}
+#edit-choices button{margin-top:0;}
+
+body.readonly-export .note{cursor:default;}
+</style>
+</head>
+
+<body>
+
+<header id="toolbar">
+<label for="userName">Seu nome</label>
+<input type="text" id="userName" placeholder="Ex.: Maria Silva" autocomplete="name">
+
+<div class="palette">
+<span>Destaque</span>
+<button type="button" class="swatch active" data-color="#f2e6a2" title="Amarelo" style="background:#f2e6a2" aria-label="Amarelo"></button>
+<button type="button" class="swatch" data-color="#a8e6cf" title="Verde" style="background:#a8e6cf" aria-label="Verde"></button>
+<button type="button" class="swatch" data-color="#ffaaa5" title="Rosa" style="background:#ffaaa5" aria-label="Rosa"></button>
+<button type="button" class="swatch" data-color="#a8c8ff" title="Azul" style="background:#a8c8ff" aria-label="Azul"></button>
+<button type="button" class="swatch" data-color="#e6b3ff" title="Lilás" style="background:#e6b3ff" aria-label="Lilás"></button>
+<button type="button" class="swatch" data-color="#ffd3a8" title="Laranja" style="background:#ffd3a8" aria-label="Laranja"></button>
+</div>
+
+<div class="toolbar-actions">
+<button type="button" id="exportFinal" class="primary">Exportar versão final</button>
+<button type="button" id="exportProject">Salvar projeto para continuar depois</button>
+</div>
+</header>
+
+<svg id="svg"></svg>
+
+<div id="wrap">
+
+<div class="side"></div>
+
+<div id="center">
+
+<div id="text">
+
+<h2>Assim na Terra como Debaixo da Terra - Ana Paula Maia</h2>
+
+<!-- COLE O TEXTO AQUI -->
+
+<p>1</p>
+
+<p>Pouco havia restado, fossem homens ou animais. Enxadas e foices permanecem largadas nos cantos das plantações ressequidas pela falta de chuva. Um córrego estreito e malcheiroso fornece água, porém mingua visivelmente dia após dia, sugado pelo calor intenso que o evapora e deixa o ar úmido e pesado. Ainda há movimentação no galinheiro e alguns grunhidos na pocilga, o que garante carne na panela para os próximos dias; no mais, a escassez preocupa. Aguardam uma ordem, um comboio que virá buscá-los e levá-los a outra parte, mas a consternação aumenta desde que a comunicação com o lado de fora dos muros silenciou. As linhas telefônicas estão interrompidas há dias, e a última notícia que tiveram é que um oficial há de chegar ao local para uma inspeção final e os conduzirá ao destino seguinte. De acordo com os cálculos, o oficial está atrasado em pelo menos sete dias, e isso aumenta vertiginosamente o sentimento de angústia. Tudo o que fazem é aguardar.</p>
+
+<p>Valdênio abana com o seu chapéu de palha algumas moscas que voejam em torno da carcaça do vira-lata seco, de costelas à mostra. Há dias que se alimentam dele. Morreu doente, com uma úlcera na barriga que se expandiu e o apodreceu gradativamente. O cão lambia a própria ferida, contemplava com tristeza e algum assombro sua carne definhar. A ferida surgiu pequena, do tamanho de uma verruga, acobreada. Aos poucos, o cão foi se tornando mais quieto e sua euforia com as sobras da cozinha foi diminuindo. Valdênio cozinhava um mingau para o cão, quando este deixou de se alimentar; por tão fraco, sua mordedura fragilizada já não triturava mais nada. Untou a ferida com algumas ervas e pólvora, mas não era o suficiente. Fazia dois dias procurava pelo cão sumido. Morreu debaixo de uma árvore com pouca folhagem. Valdênio pega a enxada caída próximo dali e abre um buraco raso onde coloca o animal esquelético, cobrindo-o com terra.</p>
+
+<p>Ao longe, um homem grita seu nome e acena para ele. Valdênio, ajoelhado, termina de espetar no solo avermelhado uma pequena cruz feita com dois gravetos. Levanta-se e caminha puxando a perna esquerda, apoiando-se numa bengala de madeira.</p>
+
+<p>— Sim, senhor? — diz Valdênio.</p>
+
+<p>— Melquíades quer falar com você — diz Taborda.</p>
+
+<p>Valdênio vira-se para seguir até o escritório de Melquíades, quando Taborda o questiona sobre o cão.</p>
+
+<p>— Vou sentir falta daquele cachorro — comenta Taborda.</p>
+
+<p>— Todos nós, senhor.</p>
+
+<p>— Nunca achei que fosse me apegar a um vira-lata tão vagabundo.</p>
+
+<p>Valdênio conserva-se em silêncio, atento ao semblante doloroso do agente penitenciário. Aguarda que este levante os olhos e lhe dê permissão para ir até o escritório de Melquíades, agente superior e a maior autoridade dentro dos muros.</p>
+
+<p>— Acho que é isso que acontece com a gente num lugar como este. A gente acaba assim, se apegando a qualquer trapo.</p>
+
+<p>Taborda lança o olhar aguardado por Valdênio, que, apoiado na bengala, caminha devagar em direção à sala da diretoria, localizada no pavilhão central.</p>
+
+<p>Melquíades está sentado à sua mesa, com as mangas da camisa arregaçadas e o botão do colarinho desabotoado. De braços e pés cruzados, parece tão somente aguardar sabe-se lá o quê.</p>
+
+<p>— Pois não, senhor?</p>
+
+<p>— Valdênio, o que temos hoje para o almoço?</p>
+
+<p>— Galinha, senhor.</p>
+
+<p>— De novo?</p>
+
+<p>— É o que temos e...</p>
+
+<p>— Mas e o leitãozinho? — interrompe Melquíades.</p>
+
+<p>— O que tem ele?</p>
+
+<p>— Podemos assá-lo.</p>
+
+<p>— Sim, senhor. Mas o Pablo já matou e depenou a galinha pra hoje.</p>
+
+<p>— Eu estava pensando, Valdênio, podíamos deixar o leitãozinho para o dia em que o oficial chegar. Afinal, precisamos oferecer um almoço a ele.</p>
+
+<p>— Como o senhor achar melhor.</p>
+
+<p>Melquíades dá um pulo da cadeira e bate palmas uma vez. Seu entusiasmo tem se tornado cada vez mais estranho, e a perturbação no seu modo de agir tem afligido a todos na Colônia. Segura Valdênio pelos ombros e olha em seus olhos trêmulos:</p>
+
+<p>— Estou certo, Valdênio, que você fará o melhor leitão assado de todo este maldito lugar.</p>
+
+<p>— Vou me esforçar, senhor.</p>
+
+<p>— Ainda temos aquela aguardente?</p>
+
+<p>— O Bronco Gil ainda tem duas garrafas.</p>
+
+<p>— Ótimo. Faremos um banquete para o oficial.</p>
+
+<p>Solta os ombros de Valdênio com a mesma intensidade com que os agarrou, e este chega a perder o equilíbrio, mas, com a ajuda da bengala, novamente encontra o eixo para se firmar.</p>
+
+<p>— Eu diria também que devemos ter um pouco de música aqui, não acha? O Pablo ainda toca aquela gaita?</p>
+
+<p>— O senhor confiscou a gaita.</p>
+
+<p>— Confisquei? Verdade?</p>
+
+<p>Melquíades enruga a testa e se questiona sobre o confisco da gaita de Pablo.</p>
+
+<p>— E você, por acaso, sabe onde a coloquei?</p>
+
+<p>— O senhor jogou do outro lado do muro.</p>
+
+<p>— Joguei? — espalma a mão contra o próprio peito, admirado de sua conduta. — Quando foi isso?</p>
+
+<p>— Semana passada.</p>
+
+<p>Melquíades caminha ardiloso até bem próximo de Valdênio, como se surrupiasse os pensamentos do homem.</p>
+
+<p>— E você saberia me dizer o motivo de eu ter confiscado a gaita?</p>
+
+<p>Valdênio mantém os olhos baixos, fixos em sua perna aleijada. Não sabe se diz a verdade ou se responde apenas não saber de nada.</p>
+
+<p>— Se o senhor confiscou, teve suas razões, senhor.</p>
+
+<p>— Ah, muito bem. Boa resposta. Evidentemente eu tive os meus motivos e gostaria de saber: você concorda com os meus motivos?</p>
+
+<p>Valdênio permanece cabisbaixo.</p>
+
+<p>— Desculpa, senhor. Eu só trabalho na cozinha. Não entendo nada das leis.</p>
+
+<p>— Não falo de leis, homem, falo de justiça. Pablo desacatou a minha ordem. Era necessária uma punição, não concorda?</p>
+
+<p>— Sim, senhor — responde entre os dentes e com um engulho na garganta.</p>
+
+<p>Melquíades posiciona-se na frente de Valdênio. Contrai o rosto e tensiona os olhos enquanto o investiga minuciosamente, sem tocá-lo, apenas o farejando.</p>
+
+<p>— Valdênio, você é o melhor cozinheiro que já tive neste lugar. Temos batata?</p>
+
+<p>— Tem, sim, senhor.</p>
+
+<p>— Não esqueça de deixá-las bem crocantes, você sabe como eu gosto.</p>
+
+<p>Melquíades dá meia-volta e vai se sentar à mesa. Abre a gaveta, puxa algumas folhas de papel e as acomoda alinhadamente numa sequência que para ele tem lógica, mas que para Valdênio é mais uma esquisitice.</p>
+
+<p>— O que você está fazendo aí, preso?</p>
+
+<p>Valdênio abre a boca sutilmente com a intenção de falar, mas emite apenas alguns balbucios, e seu olhar constantemente trêmulo não se fixa em ponto algum. Olha para baixo e recua um leve passo para trás.</p>
+
+<p>— O que temos hoje para o almoço?</p>
+
+<p>— Galinha.</p>
+
+<p>— Outra vez? Vou acabar criando penas. E o leitãozinho?</p>
+
+<p>— O senhor disse que quer assar o leitão quando o oficial chegar.</p>
+
+<p>— Mas é claro, Valdênio. Essa é uma ótima ideia. Façamos isso. O que está esperando?</p>
+
+<p>— O que, senhor?</p>
+
+<p>— Parado aí... está esperando o quê?</p>
+
+<p>— Nada, senhor. Já estou indo para a cozinha. Com licença.</p>
+
+<p>Valdênio arrasta a perna doente como se estivesse atado a uma bola de ferro. Seu caminhar lembra o flagelo de um prisioneiro, ainda vivendo com relativa liberdade, que nunca se esquece de sua verdadeira condição. Usa uma tornozeleira eletrônica na perna direita. Ela não pesa e pouco incomoda, mas o faz lembrar, assim como a todos os outros neste lugar, que um passo além dos muros da Colônia sua perna explodiria. É impossível ser removida, a não ser pelos agentes que o monitoram. É muito pior do que uma bola de ferro, é uma bomba eletrônica que amputaria seu pé.</p>
+
+<p>Valdênio é velho para um lugar como este. Tem sessenta e cinco anos. Passou a metade da vida encarcerado, atrás de grades de ferro ou em colônias penais como esta, fazendo todo tipo de trabalho. Já deveria estar solto, mas a Justiça o mantém neste lugar. Agora, espera nunca encontrar a liberdade em vida, pois já não há quem espere por ele do lado de fora dos muros. O mundo mudou, e ele também, mas não na mesma sintonia. Valdênio tornou-se mais velho, doente e não muito mais esperto. O mundo recrudesceu. Ser jogado para fora dos muros seria para ele entrar num outro confinamento de sobrevivência e resistência que já não pode mais replicar. Seus primeiros anos de detento foram difíceis; aos poucos entendeu como o sistema funciona. Apanhou dezenas de vezes, teve o crânio esmagado, o maxilar deslocado, braços e pernas quebrados; por fim, um dia ficou lesionado da perna quando foi jogado da laje de um pavilhão. Nem todas as vezes ele soube por que apanhou, muito menos da última, quando foi deixado para morrer, mas sobreviveu. Seu corpo, moído no inferno, aguarda o fim dos seus dias. Já não questiona mais. Obedece. Cumpre as ordens. Baixa a cabeça e se retira. Apanha, às vezes com motivo, às vezes sem. Por onde passou, derramaram seu sangue. Seu rastro pode ser seguido. Intriga ter sobrevivido durante tantos anos. Pouquíssimos chegam à terceira idade encarcerados.</p>
+
+<p>Valdênio se retira do pavilhão central em direção ao pavilhão oeste, onde ficam a cozinha e o alojamento dos apenados. Taborda permanece sentado no mesmo lugar de antes, à sombra de uma amendoeira, de onde observa Bronco Gil apontar ao longe, com seu arco e flecha pendurado num ombro e uma corda apoiada no outro, puxando algo escuro e pesado atrás de si. Ele caminha sem pressa, desgastado, devido à longa noite que teve, arrastando as botas de couro no chão de terra vermelha e empoeirado. Tem um corte no braço direito. O sangue escorrido sobre a pele secou. Contrai o cenho e repuxa os lábios, deixando os dentes à mostra. Não há nuvens no céu; somente um sol inclemente maltrata tudo o que está abaixo dele.</p>
+
+<p>Taborda ergue os olhos novamente quando já é possível ouvir as pisadas de Bronco Gil. De braços cruzados, suspende o boné e dá um longo assobio.</p>
+
+<p>— Dessa vez você se superou, índio.</p>
+
+<p>— A disgrama deu trabalho a noite toda.</p>
+
+<p>— Vai aonde?</p>
+
+<p>— Esfregar na cara do seu chefe — responde Bronco Gil, seguindo até o pavilhão central sem diminuir o passo.</p>
+
+<p>Bronco Gil joga o corpo do javali morto no meio da sala de Melquíades, que imediatamente para de polir uma espingarda apoiada no colo. Olha para Bronco Gil e para o animal que exala um ultrajante odor de carniça. Bronco Gil acende um cigarro. Havia guardado este último para degustar quando finalmente concluísse seu trabalho. Permanece em silêncio, observando Melquíades, que volta a olhar para a arma que tem nas mãos. A porta do armário com dezenas de armas está aberta atrás dele.</p>
+
+<p>— Eu me lembro da primeira vez em que meu pai me levou pra caçar — começa Melquíades. — Eu usei uma destas aqui. — Olha para a arma com afeto. — Realmente peguei gosto pela caça, até que uma jaguatirica quase me destripou. Desisti de caçar animais selvagens por muito tempo. — Melquíades levanta-se e coloca a espingarda de volta no armário. Desliza as mãos suavemente, tocando o armamento cuidadosamente organizado. Apanha um rifle antes de fechar o armário com um cadeado.</p>
+
+<p>— De todos, este é o meu preferido. É lindo, não acha?</p>
+
+<p>Bronco Gil concorda com um breve aceno de cabeça. Melquíades faz um ajuste na arma e aponta para ele, que permanece na mesma posição, sem esboçar nenhum sentimento. Regula a luneta do rifle.</p>
+
+<p>— Particularmente, não gosto muito destas lunetas, prefiro mirar a olho nu. Índio, eu podia arrancar seu olho bom daqui — afasta a arma milimetricamente para o lado. — Ou a sua orelha.</p>
+
+<p>Bronco Gil traga o cigarro mais uma vez, como se desprezasse a atitude de Melquíades, que pendura o rifle sobre o ombro e sai de trás de sua mesa. Apruma-se, passa a mão na cabeça lisa e suada e, em poucos passos, deparase com o javali aos seus pés. Inclina o corpo sobre o animal e espia suas presas. Toca levemente na pelagem áspera e negra e sente espetar a mão.</p>
+
+<p>— Já reparou como os javalis mortos parecem felizes? — Olha para Bronco Gil com um ar inquisidor e volta a observar o animal. — É um belo exemplar. Gostaria de colocar essa cabeçorra aqui na minha parede. É extremamente vigoroso. — Cala-se, fixa o rosto bem próximo do focinho do javali e dá um tapa na própria perna, extasiado. — É impressionante. Eles morrem sorrindo. Então me diga, índio, como capturou a criatura?</p>
+
+<p>— O senhor está vendo essa flecha aí no dorso dele?</p>
+
+<p>— Foi assim, de uma só vez?</p>
+
+<p>— É o ponto que derruba eles. É o local certo pra se matar um javali.</p>
+
+<p>— Fico pensando, índio, se você tivesse os dois olhos funcionando, hein? Como seria? Deus sabe o que faz.</p>
+
+<p>— Agora, o nosso combinado.</p>
+
+<p>— Do que você está falando?</p>
+
+<p>— Eu disse que pegava o bicho.</p>
+
+<p>— Esses demônios da floresta! Devastam tudo.</p>
+
+<p>— É só um porco grande. Demônios não morrem com uma flechada.</p>
+
+<p>— Não, não mesmo. Vamos assá-lo. Mas a cabeça eu quero empalhada. Vou colocar ela bem ali — aponta para a parede atrás de sua mesa. — Vai ficar ao lado da cabeça do javali que eu cacei uns meses atrás. — Melquíades leva a mão ao queixo e permanece contemplando a parede ornada por uma foto emoldurada do presidente da República.</p>
+
+<p>— Agora, senhor, o nosso trato.</p>
+
+<p>— Do que está falando, Bronco? Bronco, eu não entendo o seu nome. Bronco — repete como se cuspisse.</p>
+
+<p>— Eu trago o javali e o senhor...</p>
+
+<p>— Já sei, já sei... vou cumprir o acordo. A partir de hoje vocês podem usar a sala de jogos, ouvir música, quem sabe receber alguma mulher... mas neste fim de mundo e sem os telefones funcionando será difícil conseguir uma vadia — salienta, o dedo em riste. — Mas... haverá regras e horários.</p>
+
+<p>Bronco Gil sorri levemente.</p>
+
+<p>— Vou esquartejar o javali e guardar no freezer.</p>
+
+<p>— Peça ao Taborda para empalhar essa cabeça também. Aproveita e diga a ele que eu quero saber da cabeça que ele tá preparando há mais de dois meses pra mim. Ah! — exclama Melquíades, indicando o arco e as flechas pendurados no ombro de Bronco Gil. — Isso fica aqui.</p>
+
+<p>Bronco Gil deixa o arco e as flechas no chão da sala ao lado da porta, pede licença, puxa o javali pela corda e o arrasta para fora do pavilhão central. Taborda permanece na mesma posição: sentado à sombra da amendoeira. Bronco Gil estende o javali no chão, apanha uma machadinha e começa a desmembrá-lo. Retira primeiro a cabeça e a leva para Taborda.</p>
+
+<p>— Melquíades disse pra você empalhar.</p>
+
+<p>— Ainda tem serragem?</p>
+
+<p>— Tem, sim. Lá na oficina. E ele perguntou sobre a cabeça que você tá preparando.</p>
+
+<p>— Ah, sim, só faltam os olhos. Neste fim de mundo eu não tenho como conseguir um bom par de olhos.</p>
+
+<p>Taborda olha para o chão onde está a cabeça do javali. Imediatamente pequenos insetos sentem-se à vontade para explorá-la.</p>
+
+<p>— É uma bela cabeça, mas você estragou um pouco aqui — diz, tocando a bochecha do animal — podia ser mais cuidadoso.</p>
+
+<p>Taborda suspira e, com certa dificuldade, levanta seu corpo pesado e se coloca de pé. Segurando a cabeça do javali, caminha, deixando um leve rastro de pingos de sangue.</p>
+
+<p class="cena">* * *</p>
+
+<p>Pablo está com a barriga encostada na pia da cozinha picando uma cebola em cubos diminutos. Funga constantemente devido à irritação nos olhos causada pelo gás que emana da cebola partida.</p>
+
+<p>— Achou o vira-lata?</p>
+
+<p>— Já até enterrei ele — responde Valdênio, aproximando-se da pia.</p>
+
+<p>— Eu queria ter dado um tiro na cabeça dele. Não gosto de ver o bicho sofrer desse jeito. Será que o oficial chega hoje?</p>
+
+<p>— Não sei. Tenho medo de ele não chegar a tempo.</p>
+
+<p>— Melquíades enlouqueceu de vez.</p>
+
+<p>— Está completamente perturbado.</p>
+
+<p>— Espero que não demorem demais pra chegar aqui. — Pablo ajunta uma montanha de cebola picada sobre a tábua de madeira. Olha para trás e modera o tom de voz: — E se deixarem a gente aqui?</p>
+
+<p>— Fugimos — sussurra Valdênio.</p>
+
+<p>— Com esta bomba no tornozelo? Acho que ninguém tem chance de escapar. Além do mais, Melquíades mata a gente antes.</p>
+
+<p>— Deus está olhando por nós. Aguente mais um pouco.</p>
+
+<p>— Acho que a gente não passa de hoje.</p>
+
+<p>— Vamos ter fé, Pablo. Mais um pouco e eles chegam.</p>
+
+<p>— Você vai morrer preso, Valdênio.</p>
+
+<p>— Não tem mais nada lá fora pra mim.</p>
+
+<p>— Mas eu tenho. Você ainda vai me ajudar a fugir?</p>
+
+<p>Valdênio não responde e mantém-se cabisbaixo, descascando batatas. Pablo olha insistentemente para ele e consterna-se com o silêncio. Permanecem lado a lado preparando o almoço e transpirando à beira de panelas ferventes na grande e encardida cozinha do pavilhão.</p>
+<!-- FIM DO TEXTO -->
+
+</div>
+
+</div>
+
+<div class="side"></div>
+
+</div>
+
+
+<div id="modal">
+<div id="box">
+<h3 id="modal-title">Nova anotação</h3>
+<textarea id="input" placeholder="Digite sua anotação…"></textarea>
+<div id="create-actions" class="modal-actions">
+<button type="button" id="ok" class="primary">Salvar</button>
+<button type="button" id="cancelCreate">Cancelar</button>
+</div>
+<div id="edit-choices" class="modal-actions">
+<button type="button" id="btnAlterar">Alterar texto</button>
+<button type="button" id="btnExcluir" class="danger">Excluir anotação</button>
+<button type="button" id="cancelEdit">Cancelar</button>
+</div>
+<div id="edit-form" class="modal-actions" style="display:none">
+<button type="button" id="okEdit" class="primary">Salvar alteração</button>
+<button type="button" id="cancelEditForm">Voltar</button>
+</div>
+</div>
+</div>
+
+
+<script>
+/* Estado global */
+let range = null;
+let notes = [];
+let counter = 0;
+let highlightColor = "#f2e6a2";
+let modalMode = "create";
+let editingNoteId = null;
+
+let dragging = null;
+let offsetX = 0;
+let offsetY = 0;
+
+const modal = document.getElementById("modal");
+const input = document.getElementById("input");
+const svg = document.getElementById("svg");
+const modalTitle = document.getElementById("modal-title");
+const createActions = document.getElementById("create-actions");
+const editChoices = document.getElementById("edit-choices");
+const editForm = document.getElementById("edit-form");
+
+const PALETTE = ["#f2e6a2", "#a8e6cf", "#ffaaa5", "#a8c8ff", "#e6b3ff", "#ffd3a8"];
+
+function slugNome() {
+  const nome = document.getElementById("userName").value.trim() || "leitura";
+  return nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/gi, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .slice(0, 80) || "leitura";
+}
+
+function baixarHtml(nomeArquivo, html) {
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nomeArquivo;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function fecharModal() {
+  modal.style.display = "none";
+  modalMode = "create";
+  editingNoteId = null;
+  input.value = "";
+  createActions.style.display = "flex";
+  editChoices.style.display = "none";
+  editForm.style.display = "none";
+  window.getSelection().removeAllRanges();
+}
+
+function abrirModalCriar() {
+  modalMode = "create";
+  editingNoteId = null;
+  modalTitle.textContent = "Nova anotação";
+  input.value = "";
+  input.style.display = "block";
+  createActions.style.display = "flex";
+  editChoices.style.display = "none";
+  editForm.style.display = "none";
+  modal.style.display = "flex";
+}
+
+function abrirModalEditar(id) {
+  const meta = notes.find((n) => n.id === id);
+  if (!meta) return;
+  modalMode = "edit";
+  editingNoteId = id;
+  modalTitle.textContent = "Anotação";
+  input.value = meta.text;
+  input.style.display = "none";
+  createActions.style.display = "none";
+  editChoices.style.display = "flex";
+  editForm.style.display = "none";
+  modal.style.display = "flex";
+}
+
+function abrirFormAlterar() {
+  input.style.display = "block";
+  editChoices.style.display = "none";
+  editForm.style.display = "flex";
+  modalTitle.textContent = "Alterar texto";
+}
+
+function criarBotaoEditar(noteEl) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "note-edit";
+  btn.title = "Editar anotação";
+  btn.textContent = "✎";
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    abrirModalEditar(noteEl.id);
+  });
+  noteEl.insertBefore(btn, noteEl.firstChild);
+}
+
+function criarNotaElemento(id, texto) {
+  const note = document.createElement("div");
+  note.className = "note";
+  note.id = id;
+  const body = document.createElement("div");
+  body.className = "note-body";
+  body.textContent = texto;
+  note.appendChild(body);
+  criarBotaoEditar(note);
+  return note;
+}
+
+const NOTE_GAP = 10;
+const NOTE_LANE_LEFT = 20;
+const NOTE_LANE_RIGHT = 20;
+
+function posicionarNota(note, span, lado) {
+  const rect = span.getBoundingClientRect();
+  const scrollTop = window.scrollY;
+
+  if (!note.isConnected) document.body.appendChild(note);
+
+  let top = scrollTop + rect.top + rect.height / 2 - note.offsetHeight / 2;
+
+  const others = notes
+    .filter((n) => n.lado === lado)
+    .map((n) => document.getElementById(n.id))
+    .filter((el) => el && el !== note);
+
+  others.sort((a, b) => (parseFloat(a.style.top) || 0) - (parseFloat(b.style.top) || 0));
+
+  for (const other of others) {
+    const ot = parseFloat(other.style.top) || 0;
+    const ob = ot + other.offsetHeight;
+    if (top < ob + NOTE_GAP && top + note.offsetHeight > ot - NOTE_GAP) {
+      top = ob + NOTE_GAP;
+    }
+  }
+
+  const minTop = scrollTop + rect.top - 4;
+  const maxTop = scrollTop + rect.bottom - note.offsetHeight + 4;
+  if (maxTop >= minTop) {
+    top = Math.min(Math.max(top, minTop), maxTop);
+  }
+
+  note.style.top = top + "px";
+  if (lado) {
+    note.style.left = NOTE_LANE_LEFT + "px";
+    note.style.right = "auto";
+  } else {
+    note.style.right = NOTE_LANE_RIGHT + "px";
+    note.style.left = "auto";
+  }
+}
+
+function aplicarPosicaoSalva(note, dados) {
+  if (dados.top) note.style.top = dados.top;
+  if (dados.left && dados.left !== "auto") {
+    note.style.left = dados.left;
+    note.style.right = "auto";
+  } else if (dados.right && dados.right !== "auto") {
+    note.style.right = dados.right;
+    note.style.left = "auto";
+  }
+}
+
+function ativarDrag(el) {
+  if (el.dataset.interactive === "1") return;
+  el.dataset.interactive = "1";
+  el.addEventListener("mousedown", (e) => {
+    if (e.target.closest(".note-edit")) return;
+    dragging = el;
+    const rect = el.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+    el.style.cursor = "grabbing";
+  });
+}
+
+function limparNotasDuplicadas() {
+  const vistos = new Set();
+  document.querySelectorAll(".note").forEach((el) => {
+    if (!el.id || vistos.has(el.id)) {
+      el.remove();
+      return;
+    }
+    vistos.add(el.id);
+  });
+}
+
+function limparTodasNotas() {
+  document.querySelectorAll(".note").forEach((el) => el.remove());
+}
+
+function sincronizarNotaDoDOM(noteEl, meta) {
+  const body = noteEl.querySelector(".note-body");
+  if (body) body.textContent = meta.text;
+  if (!noteEl.querySelector(".note-edit")) criarBotaoEditar(noteEl);
+}
+
+function salvarPosicaoNota(el) {
+  const meta = notes.find((n) => n.id === el.id);
+  if (!meta) return;
+  meta.top = el.style.top;
+  meta.left = el.style.left;
+  meta.right = el.style.right;
+}
+
+function excluirNota(id) {
+  const noteEl = document.getElementById(id);
+  const span = document.querySelector(`[data-id="${id}"]`);
+  if (noteEl) noteEl.remove();
+  if (span) {
+    const parent = span.parentNode;
+    while (span.firstChild) {
+      parent.insertBefore(span.firstChild, span);
+    }
+    parent.removeChild(span);
+    parent.normalize();
+  }
+  notes = notes.filter((n) => n.id !== id);
+  desenhar();
+}
+
+function atualizarTextoNota(id, novoTexto) {
+  const meta = notes.find((n) => n.id === id);
+  const noteEl = document.getElementById(id);
+  if (meta) meta.text = novoTexto;
+  if (noteEl) {
+    const body = noteEl.querySelector(".note-body");
+    if (body) body.textContent = novoTexto;
+  }
+}
+
+function adicionarNota(valor) {
+  const id = "n" + counter++;
+  const span = document.createElement("span");
+  span.className = "highlight";
+  span.dataset.id = id;
+  span.style.background = highlightColor;
+
+  try {
+    range.surroundContents(span);
+  } catch (err) {
+    alert("Não foi possível destacar essa seleção. Tente selecionar apenas dentro de um parágrafo, sem cruzar tags.");
+    return;
+  }
+
+  const note = criarNotaElemento(id, valor);
+  const rect = span.getBoundingClientRect();
+  const center = document.getElementById("text").getBoundingClientRect();
+  const lado = rect.left + rect.width / 2 < center.left + center.width / 2;
+
+  document.body.appendChild(note);
+  posicionarNota(note, span, lado);
+  ativarDrag(note);
+
+  notes.push({
+    id,
+    lado,
+    text: valor,
+    color: highlightColor,
+    top: note.style.top,
+    left: note.style.left,
+    right: note.style.right,
+  });
+
+  desenhar();
+  fecharModal();
+}
+
+function restaurarNota(meta) {
+  const span = document.querySelector(`[data-id="${meta.id}"]`);
+  if (span && meta.color) {
+    span.style.background = meta.color;
+    span.classList.add("highlight");
+  }
+
+  let noteEl = document.getElementById(meta.id);
+  if (!noteEl) {
+    noteEl = criarNotaElemento(meta.id, meta.text);
+    document.body.appendChild(noteEl);
+  } else {
+    sincronizarNotaDoDOM(noteEl, meta);
+  }
+
+  if (meta.top || meta.left || meta.right) {
+    aplicarPosicaoSalva(noteEl, meta);
+  } else if (span) {
+    posicionarNota(noteEl, span, meta.lado);
+  }
+
+  ativarDrag(noteEl);
+  notes.push({ ...meta });
+}
+
+function coletarEstado() {
+  notes.forEach((n) => {
+    const el = document.getElementById(n.id);
+    if (el) salvarPosicaoNota(el);
+  });
+  return {
+    version: 1,
+    userName: document.getElementById("userName").value.trim(),
+    highlightColor,
+    counter,
+    textHtml: document.getElementById("text").innerHTML,
+    notes: notes.map((n) => ({ ...n })),
+  };
+}
+
+function restaurarEstado(state) {
+  if (!state || state.version !== 1) return;
+  limparTodasNotas();
+  notes = [];
+
+  if (state.userName) {
+    document.getElementById("userName").value = state.userName;
+  }
+  if (state.highlightColor) {
+    highlightColor = state.highlightColor;
+    document.querySelectorAll(".swatch").forEach((s) => {
+      s.classList.toggle("active", s.dataset.color === highlightColor);
+    });
+  }
+  if (state.textHtml) {
+    document.getElementById("text").innerHTML = state.textHtml;
+  }
+  counter = state.counter || 0;
+
+  limparNotasDuplicadas();
+  (state.notes || []).forEach((meta) => restaurarNota(meta));
+  limparNotasDuplicadas();
+  desenhar();
+}
+
+/* Paleta */
+document.querySelectorAll(".swatch").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    highlightColor = btn.dataset.color;
+    document.querySelectorAll(".swatch").forEach((s) => s.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+/* Seleção → nova anotação */
+document.addEventListener("mouseup", () => {
+  if (dragging) return;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
+  const anchor = sel.anchorNode;
+  const textEl = document.getElementById("text");
+  if (!anchor || !textEl.contains(anchor)) return;
+  range = sel.getRangeAt(0).cloneRange();
+  abrirModalCriar();
+});
+
+document.getElementById("ok").onclick = () => {
+  const valor = input.value.trim();
+  if (!valor) return;
+  adicionarNota(valor);
+};
+
+document.getElementById("cancelCreate").onclick = fecharModal;
+document.getElementById("cancelEdit").onclick = fecharModal;
+
+document.getElementById("btnAlterar").onclick = abrirFormAlterar;
+
+document.getElementById("btnExcluir").onclick = () => {
+  if (!editingNoteId) return;
+  if (confirm("Excluir esta anotação e o destaque no texto?")) {
+    excluirNota(editingNoteId);
+    fecharModal();
+  }
+};
+
+document.getElementById("okEdit").onclick = () => {
+  const valor = input.value.trim();
+  if (!valor || !editingNoteId) return;
+  atualizarTextoNota(editingNoteId, valor);
+  fecharModal();
+};
+
+document.getElementById("cancelEditForm").onclick = () => {
+  const meta = notes.find((n) => n.id === editingNoteId);
+  if (meta) input.value = meta.text;
+  input.style.display = "none";
+  editForm.style.display = "none";
+  editChoices.style.display = "flex";
+  modalTitle.textContent = "Anotação";
+};
+
+/* Drag global */
+document.addEventListener("mousemove", (e) => {
+  if (!dragging) return;
+  dragging.style.left = e.pageX - offsetX + "px";
+  dragging.style.top = e.pageY - offsetY + "px";
+  dragging.style.right = "auto";
+  desenhar();
+});
+
+document.addEventListener("mouseup", () => {
+  if (dragging) {
+    dragging.style.cursor = "grab";
+    salvarPosicaoNota(dragging);
+    dragging = null;
+  }
+});
+
+function resizeSVG() {
+  svg.setAttribute("height", document.documentElement.scrollHeight);
+}
+
+window.addEventListener("scroll", desenhar);
+window.addEventListener("resize", desenhar);
+
+function pontosConexao(span, note) {
+  const r1 = span.getBoundingClientRect();
+  const r2 = note.getBoundingClientRect();
+  const scrollTop = window.scrollY;
+  const textEl = document.getElementById("text");
+  const textMid = textEl
+    ? textEl.getBoundingClientRect().left + textEl.getBoundingClientRect().width / 2
+    : window.innerWidth / 2;
+  const highlightMid = r1.left + r1.width / 2;
+  const notaNaEsquerda = r2.left + r2.width / 2 < textMid;
+
+  const x1 = highlightMid < textMid ? r1.left : r1.right;
+  const y1 = scrollTop + r1.top + r1.height / 2;
+  const x2 = notaNaEsquerda ? r2.right : r2.left;
+  const y2 = scrollTop + r2.top + r2.height / 2;
+  const mid = (y1 + y2) / 2 - 40;
+
+  return { x1, y1, x2, y2, mid };
+}
+
+function desenhar() {
+  resizeSVG();
+  svg.innerHTML = "";
+  notes.forEach((n) => {
+    const note = document.getElementById(n.id);
+    const span = document.querySelector(`[data-id="${n.id}"]`);
+    if (!note || !span) return;
+
+    const { x1, y1, x2, y2, mid } = pontosConexao(span, note);
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute(
+      "d",
+      `M ${x1} ${y1} C ${x1 + (x2 > x1 ? 60 : -60)} ${mid}, ${x2 + (x2 > x1 ? -60 : 60)} ${mid}, ${x2} ${y2}`
+    );
+    path.setAttribute("stroke", "#333");
+    path.setAttribute("stroke-width", "1.2");
+    path.setAttribute("fill", "none");
+    svg.appendChild(path);
+  });
+}
+
+let backupLayoutExport = null;
+
+function prepararLayoutExportacao() {
+  notes.forEach((n) => {
+    const el = document.getElementById(n.id);
+    if (el) salvarPosicaoNota(el);
+  });
+
+  backupLayoutExport = notes.map((n) => {
+    const el = document.getElementById(n.id);
+    return {
+      id: n.id,
+      top: el?.style.top || "",
+      left: el?.style.left || "",
+      right: el?.style.right || "",
+    };
+  });
+
+  const toolbar = document.getElementById("toolbar");
+  const toolbarH = toolbar ? toolbar.offsetHeight : 0;
+
+  if (toolbar) toolbar.style.display = "none";
+
+  /* Mantém onde o usuário colocou; só compensa a página “subir” sem o cabeçalho */
+  if (toolbarH > 0) {
+    notes.forEach((n) => {
+      const note = document.getElementById(n.id);
+      if (!note?.style.top) return;
+      const top = parseFloat(note.style.top);
+      if (!Number.isNaN(top)) note.style.top = top - toolbarH + "px";
+    });
+  }
+
+  desenhar();
+}
+
+function restaurarLayoutEdicao() {
+  const toolbar = document.getElementById("toolbar");
+  if (toolbar) toolbar.style.display = "";
+
+  if (backupLayoutExport) {
+    backupLayoutExport.forEach((b) => {
+      const note = document.getElementById(b.id);
+      if (note) aplicarPosicaoSalva(note, b);
+    });
+    backupLayoutExport = null;
+  }
+
+  desenhar();
+}
+
+function htmlVersaoFinal() {
+  limparNotasDuplicadas();
+  prepararLayoutExportacao();
+
+  const clone = document.documentElement.cloneNode(true);
+  const idsExport = new Set();
+  clone.querySelectorAll(".note").forEach((el) => {
+    if (!el.id || idsExport.has(el.id)) el.remove();
+    else idsExport.add(el.id);
+  });
+  clone.querySelector("#toolbar")?.remove();
+  clone.querySelector("#modal")?.remove();
+  clone.querySelectorAll("script").forEach((s) => s.remove());
+  clone.querySelectorAll(".note-edit").forEach((b) => b.remove());
+
+  const style = clone.querySelector("style");
+  if (style) {
+    style.textContent +=
+      "\n.note{cursor:default!important;}\n#text{user-select:text;}\n#toolbar{display:none!important;}\n";
+  }
+  clone.querySelector("body")?.classList.add("readonly-export");
+
+  const titulo = document.getElementById("userName").value.trim();
+  const titleEl = clone.querySelector("title");
+  if (titleEl && titulo) {
+    titleEl.textContent = titulo + " — Leitura anotada";
+  }
+
+  const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+
+  restaurarLayoutEdicao();
+
+  return html;
+}
+
+function htmlProjeto(state) {
+  const stateJson = JSON.stringify(state)
+    .replace(/</g, "\\u003c")
+    .replace(/-->/g, "--\\u003e");
+
+  const doc = document.documentElement.cloneNode(true);
+
+  doc.querySelectorAll(".note").forEach((el) => el.remove());
+  const svgClone = doc.querySelector("#svg");
+  if (svgClone) svgClone.innerHTML = "";
+
+  const scripts = doc.querySelectorAll("script");
+  const appScript = scripts[scripts.length - 1];
+  if (!appScript) return htmlVersaoFinal();
+
+  const boot = document.createElement("script");
+  boot.textContent = "const INITIAL_STATE = " + stateJson + ";\n";
+  appScript.parentNode.insertBefore(boot, appScript);
+
+  return "<!DOCTYPE html>\n" + doc.outerHTML;
+}
+
+document.getElementById("exportFinal").onclick = () => {
+  const nome = slugNome() + "_versao_final.html";
+  baixarHtml(nome, htmlVersaoFinal());
+};
+
+document.getElementById("exportProject").onclick = () => {
+  const state = coletarEstado();
+  const nome = slugNome() + "_projeto.html";
+  baixarHtml(nome, htmlProjeto(state));
+};
+
+/* Inicialização (projeto reaberto — após todo o HTML, inclusive boxes salvos por engano) */
+function iniciarApp() {
+  limparNotasDuplicadas();
+  if (typeof INITIAL_STATE !== "undefined" && INITIAL_STATE) {
+    restaurarEstado(INITIAL_STATE);
+  } else {
+    desenhar();
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", iniciarApp);
+} else {
+  iniciarApp();
+}
+</script>
+
+</body>
+</html>
